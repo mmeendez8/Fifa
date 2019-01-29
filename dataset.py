@@ -12,13 +12,9 @@ def get_files(base_dir):
 
 
 def remove_noise(image, channels):
-    alpha = tf.greater(image[:, :, 3], 0)
-    up_mask = tf.roll(alpha, shift=1, axis=0)
-    right_mask = tf.roll(alpha, shift=-1, axis=1)
-    mask = tf.logical_and(tf.logical_and(up_mask, right_mask), alpha)
-    mask = tf.expand_dims(tf.cast(mask, dtype=tf.uint8), 2)
-
-    noise_filtered = tf.multiply(mask, image)
+    alpha = tf.greater(image[:, :, 3], 5)
+    alpha = tf.expand_dims(tf.cast(alpha, dtype=tf.uint8), 2)
+    noise_filtered = tf.multiply(alpha, image)
 
     return noise_filtered[..., :channels]
 
