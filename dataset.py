@@ -1,8 +1,7 @@
 import tensorflow as tf
 import os
 import matplotlib.pyplot as plt
-import cv2
-import numpy as np
+
 
 
 def get_files(base_dir):
@@ -11,21 +10,21 @@ def get_files(base_dir):
 
 
 
-def remove_noise(image, channels):
-    alpha = tf.greater(image[:, :, 3], 5)
+def remove_noise(image):
+    alpha = tf.greater(image[:, :, 3], 50)
     alpha = tf.expand_dims(tf.cast(alpha, dtype=tf.uint8), 2)
     noise_filtered = tf.multiply(alpha, image)
 
-    return noise_filtered[..., :channels]
+    return noise_filtered[..., :3]
 
 
-def parse_function(filename, channels=4):
+def parse_function(filename):
 
     image_string = tf.read_file(filename)
     image = tf.image.decode_png(image_string, channels=4)
-    image = remove_noise(image, channels)
+    image = remove_noise(image)
     image = tf.image.rgb_to_grayscale(image[:,:,:3])
-    image = tf.image.resize_images(image, [224, 224])
+    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
 
     return image
 
@@ -55,30 +54,30 @@ def load_and_process_data(base_dir, batch_size, shuffle=True):
                 n_batches += 1
 
     return dataset, n_batches
-
-
-base_dir = 'Data/Images'
-dataset, n_batches = load_and_process_data(base_dir=base_dir, batch_size=5, shuffle=False)
-
-
-iterator = dataset.make_initializable_iterator()
-input_batch = iterator.get_next()
-
-
-
-init_vars = [tf.local_variables_initializer(), tf.global_variables_initializer()]
-
-
-
-with tf.Session() as sess:
-    sess.run([init_vars, iterator.initializer]) # Initialize variables and the iterator
-
-    while 1:    # Iterate until we get out of range error!
-        try:
-            batch = sess.run(input_batch)
-            print(batch.shape)  # Get batch dimensions
-            plt.imshow(batch[0,:,:,0] , cmap='gray')
-            plt.show()
-        except tf.errors.OutOfRangeError:  # This exception is triggered when all batches are iterated
-            print('All batches have been iterated!')
-            break
+#
+#
+# base_dir = 'Data/Images'
+# dataset, n_batches = load_and_process_data(base_dir=base_dir, batch_size=5, shuffle=False)
+#
+#
+# iterator = dataset.make_initializable_iterator()
+# input_batch = iterator.get_next()
+#
+#
+#
+# init_vars = [tf.local_variables_initializer(), tf.global_variables_initializer()]
+#
+#
+#
+# with tf.Session() as sess:
+#     sess.run([init_vars, iterator.initializer]) # Initialize variables and the iterator
+#
+#     while 1:    # Iterate until we get out of range error!
+#         try:
+#             batch = sess.run(input_batch)
+#             print(batch.shape)  # Get batch dimensions
+#             plt.imshow(batch[0,:,:,0] , cmap='gray')
+#             plt.show()
+#         except tf.errors.OutOfRangeError:  # This exception is triggered when all batches are iterated
+#             print('All batches have been iterated!')
+#             break
