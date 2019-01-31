@@ -23,8 +23,9 @@ def parse_function(filename):
     image_string = tf.read_file(filename)
     image = tf.image.decode_png(image_string, channels=4)
     image = remove_noise(image)
-    image = tf.image.rgb_to_grayscale(image[:,:,:3])
+    # image = tf.image.rgb_to_grayscale(image[:,:,:3])
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    image.set_shape([48, 48, 3])
 
     return image
 
@@ -54,7 +55,7 @@ def load_and_process_data(base_dir, batch_size, shuffle=True):
                 n_batches += 1
 
     return dataset, n_batches
-#
+
 #
 # base_dir = 'Data/Images'
 # dataset, n_batches = load_and_process_data(base_dir=base_dir, batch_size=5, shuffle=False)
@@ -76,7 +77,7 @@ def load_and_process_data(base_dir, batch_size, shuffle=True):
 #         try:
 #             batch = sess.run(input_batch)
 #             print(batch.shape)  # Get batch dimensions
-#             plt.imshow(batch[0,:,:,0] , cmap='gray')
+#             plt.imshow(batch[0,...])
 #             plt.show()
 #         except tf.errors.OutOfRangeError:  # This exception is triggered when all batches are iterated
 #             print('All batches have been iterated!')

@@ -19,12 +19,11 @@ def define_scope(function):
 
 class VAE:
 
-    def __init__(self, data, latent_dim, learning_rate, image_size=48, channels=1):
+    def __init__(self, data, latent_dim, learning_rate, image_size=48, channels=3):
         self.data = data
         self.learning_rate = learning_rate
         self.latent_dim = latent_dim
-        print(latent_dim)
-        self.inputs_decoder = (image_size / 4)**2 * channels
+        self.inputs_decoder = ((image_size / 4)**2) * channels
         self.encode
         self.decode
         self.optimize
@@ -34,8 +33,9 @@ class VAE:
     @define_scope
     def encode(self):
         activation = tf.nn.relu
-        with tf.variable_scope('Encoder'):
+        with tf.variable_scope('Data'):
             x = self.data
+        with tf.variable_scope('Encoder'):
             x = tf.layers.conv2d(x, filters=64, kernel_size=4, strides=2, padding='same', activation=activation)
             x = tf.layers.conv2d(x, filters=64, kernel_size=4, strides=2, padding='same', activation=activation)
             x = tf.layers.conv2d(x, filters=64, kernel_size=4, strides=1, padding='same', activation=activation)
@@ -57,8 +57,9 @@ class VAE:
         with tf.variable_scope('Decoder'):
             x = tf.layers.dense(self.z, units=self.inputs_decoder, activation=activation)
             x = tf.layers.dense(x, units=self.inputs_decoder, activation=activation)
-            recovered_size = int(np.sqrt(self.inputs_decoder))
-            x = tf.reshape(x, [-1, recovered_size, recovered_size, 1])
+            recovered_size = int(np.sqrt(self.inputs_decoder/3))
+
+            x = tf.reshape(x, [-1, recovered_size, recovered_size, 3])
 
             x = tf.layers.conv2d_transpose(x, filters=64, kernel_size=4, strides=1, padding='same',
                                            activation=activation)
@@ -68,10 +69,11 @@ class VAE:
                                            activation=activation)
 
             x = tf.contrib.layers.flatten(x)
-            x = tf.layers.dense(x, units=48 * 48, activation=None)
+            x = tf.layers.dense(x, units=48 * 48 * 3, activation=None)
 
-            x = tf.layers.dense(x, units=48 * 48, activation=tf.nn.sigmoid)
-            output = tf.reshape(x, shape=[-1, 48, 48, 1])
+            x = tf.layers.dense(x, units=48 * 48 * 3, activation=tf.nn.sigmoid)
+            output = tf.reshape(x, shape=[-1, 48, 48, 3])
+            output = tf.identity(output, name='decoded_output')
 
         return output
 
@@ -79,18 +81,29 @@ class VAE:
     def optimize(self):
         with tf.variable_scope('Optimize'):
             # Reshape input and output to flat vectors
-            flat_output = tf.reshape(self.decode, [-1, 48 * 48])
-            flat_input = tf.reshape(self.data, [-1, 48 * 48])
+            flat_output = tf.reshape(self.decode, [-1, 48 * 48 * 3])
+            flat_input = tf.reshape(self.data, [-1, 48 * 48 * 3])
 
             with tf.name_scope('loss'):
                 img_loss = tf.reduce_sum(flat_input * -tf.log(flat_output) + (1 - flat_input) * -tf.log(1 - flat_output), 1)
+
                 latent_loss = 0.5 * tf.reduce_sum(tf.square(self.mean_) + tf.square(self.std_dev) - tf.log(tf.square(self.std_dev)) - 1, 1)
+
                 loss = tf.reduce_mean(img_loss + latent_loss)
                 # tf.summary.scalar('batch_loss', loss)
 
             optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(loss)
-
         return optimizer
 
+    def get_inputs_outputs(self):
+        # Saving
+        inputs = {
+            'input_tensor': self.data,
+        }
+        outputs = {
+            'latent': self.__getattribute__('_cache_encode')[0],
+            'prediction': self.__getattribute__('_cache_decode'),
+        }
+        return inputs, outputs
 
 

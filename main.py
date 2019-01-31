@@ -3,60 +3,65 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from dataset import load_and_process_data
 import os
-import shutil
-
+from utils import create_results_folder, get_model_description, delete_old_logs
 
 
 # Network parameters
 tf.flags.DEFINE_float('learning_rate', .0005, 'Initial learning rate.')
 tf.flags.DEFINE_integer('epochs', 20, 'Number of steps to run trainer.')
-tf.flags.DEFINE_integer('batch_size', 128, 'Minibatch size')
-tf.flags.DEFINE_integer('latent_dim', 10, 'Number of latent dimensions')
+tf.flags.DEFINE_integer('batch_size', 32, 'Minibatch size')
+tf.flags.DEFINE_integer('latent_dim', 6, 'Number of latent dimensions')
 tf.flags.DEFINE_integer('test_image_number', 5, 'Number of test images to recover during training')
-tf.flags.DEFINE_integer('inputs_decoder', 49, 'Size of decoder input layer')
 tf.flags.DEFINE_string('logdir', './logs', 'Logs folder')
 tf.flags.DEFINE_bool('plot_latent', True, 'Plot latent space')
+tf.flags.DEFINE_bool('shuffle', True, 'Plot latent space')
 
 FLAGS = tf.flags.FLAGS
 
-# Define and create results folders
-results_folder = 'Results'
-[os.makedirs(os.path.join(results_folder, folder)) for folder in ['Test', 'Train']
-    if not os.path.exists(os.path.join(results_folder, folder))]
-
-# Empty log folder
-try:
-    if not len(os.listdir(FLAGS.logdir)) == 0:
-        shutil.rmtree(FLAGS.logdir)
-except:
-    pass
+# Prepare output directories
+model_description = get_model_description(FLAGS.flag_values_dict())
+results_folder = create_results_folder(os.path.join('Results', model_description))
+model_folder = os.path.join('Models', model_description)
+delete_old_logs(FLAGS.logdir)
 
 # Create tf dataset
-dataset, n_batches = load_and_process_data(base_dir='Data/Images', batch_size=32, shuffle=False)
+dataset, n_batches = load_and_process_data(base_dir='Data/Images', batch_size=FLAGS.batch_size, shuffle=False)
 
 iterator = dataset.make_initializable_iterator()
 input_batch = iterator.get_next()
-input_batch = tf.reshape(input_batch, shape=[-1, 48, 48, 1])
-
 
 vae = VAE(input_batch, FLAGS.latent_dim, FLAGS.learning_rate, )
 
 init_vars = [tf.local_variables_initializer(), tf.global_variables_initializer()]
 gpu_options = tf.GPUOptions(allow_growth=True)
 
+
 # Training loop
-with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+with tf.Session() as sess:
     writer = tf.summary.FileWriter('./logs', sess.graph)
 
     sess.run(init_vars)
 
     for epoch in range(FLAGS.epochs):
-        print(epoch)
+        print('Actual epochs is: {}'.format(epoch))
         sess.run(iterator.initializer)
         flag = True
+
+
+
         while True:
             try:
                 sess.run(vae.optimize)
+
+                # Save model
+                if not epoch % 1:
+                    if os.path.exists(model_folder):
+                        delete_old_logs(model_folder)
+                    inputs, outputs = vae.get_inputs_outputs()
+                    tf.saved_model.simple_save(
+                        sess, model_folder, inputs, outputs
+                    )
+
                 if flag:
                     flag = False
                     # Get input and recover output images comparison
@@ -64,11 +69,13 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
                     f, axarr = plt.subplots(FLAGS.test_image_number, 2)
                     for j in range(FLAGS.test_image_number):
                         for pos, im in enumerate([target, output_]):
-                            axarr[j, pos].imshow(im[j].reshape((48, 48)), cmap='gray')
+                            axarr[j, pos].imshow(im[j].reshape((48, 48, 3)))
                             axarr[j, pos].axis('off')
 
-                    plt.show()
+                    plt.savefig(os.path.join(results_folder, 'Train/Epoch_{}').format(epoch))
+                    plt.close(f)
 
             except tf.errors.OutOfRangeError:
-                break
+                pass
+
 
