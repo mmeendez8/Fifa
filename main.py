@@ -4,15 +4,16 @@ import matplotlib.pyplot as plt
 from dataset import load_and_process_data
 import os
 from utils import create_results_folder, get_model_description, delete_old_logs
-
+from time import time
 
 # Network parameters
 tf.flags.DEFINE_float('learning_rate', .0005, 'Initial learning rate.')
-tf.flags.DEFINE_integer('epochs', 20, 'Number of steps to run trainer.')
+tf.flags.DEFINE_integer('epochs', 100, 'Number of steps to run trainer.')
 tf.flags.DEFINE_integer('batch_size', 32, 'Minibatch size')
-tf.flags.DEFINE_integer('latent_dim', 6, 'Number of latent dimensions')
+tf.flags.DEFINE_integer('latent_dim', 3, 'Number of latent dimensions')
 tf.flags.DEFINE_integer('test_image_number', 5, 'Number of test images to recover during training')
 tf.flags.DEFINE_string('logdir', './logs', 'Logs folder')
+tf.flags.DEFINE_string('data_path', './Data/Images', 'Logs folder')
 tf.flags.DEFINE_bool('plot_latent', True, 'Plot latent space')
 tf.flags.DEFINE_bool('shuffle', True, 'Plot latent space')
 
@@ -25,7 +26,7 @@ model_folder = os.path.join('Models', model_description)
 delete_old_logs(FLAGS.logdir)
 
 # Create tf dataset
-dataset, n_batches = load_and_process_data(base_dir='Data/Images', batch_size=FLAGS.batch_size, shuffle=False)
+dataset, n_batches = load_and_process_data(base_dir=FLAGS.data_path, batch_size=FLAGS.batch_size, shuffle=False)
 
 iterator = dataset.make_initializable_iterator()
 input_batch = iterator.get_next()
@@ -43,18 +44,17 @@ with tf.Session() as sess:
     sess.run(init_vars)
 
     for epoch in range(FLAGS.epochs):
-        print('Actual epochs is: {}'.format(epoch))
+        print('Actual epochs is: {}'.format(epoch), end='', flush= True)
         sess.run(iterator.initializer)
         flag = True
-
-
-
+        ts = time()
         while True:
             try:
+
                 sess.run(vae.optimize)
 
                 # Save model
-                if not epoch % 1:
+                if not epoch % 10 and epoch > 0:
                     if os.path.exists(model_folder):
                         delete_old_logs(model_folder)
                     inputs, outputs = vae.get_inputs_outputs()
@@ -76,6 +76,7 @@ with tf.Session() as sess:
                     plt.close(f)
 
             except tf.errors.OutOfRangeError:
-                pass
+                print('\t Epoch time: {}'.format(time() - ts))
+                break
 
 
