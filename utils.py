@@ -12,8 +12,9 @@ def create_results_folder(results_folder='Results'):
 def get_model_description(flags):
     description = ''
     flag_names = ['latent_dim', 'learning_rate']
-    for f in flag_names:
-        description += '{}_{}_'.format(f, flags[f])
+    for key in flags.__flags.keys():
+        if key in flag_names:
+            description += '{}_{}_'.format(key, getattr(flags, key))
 
     return description[:-1]
 

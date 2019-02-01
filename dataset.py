@@ -48,7 +48,7 @@ def load_and_process_data(base_dir, batch_size, shuffle=True):
                 dataset = dataset.shuffle((len(filenames)//4)+1) # Number of imgs to keep in a buffer to randomly sample
 
             dataset = dataset.batch(batch_size)
-            dataset = dataset.prefetch(batch_size)
+            dataset = dataset.prefetch(2)
             n_batches = len(filenames) // batch_size
 
             if len(filenames) % batch_size != 0:

@@ -7,10 +7,10 @@ from utils import create_results_folder, get_model_description, delete_old_logs
 from time import time
 
 # Network parameters
-tf.flags.DEFINE_float('learning_rate', .0005, 'Initial learning rate.')
+tf.flags.DEFINE_float('learning_rate', .0001, 'Initial learning rate.')
 tf.flags.DEFINE_integer('epochs', 100, 'Number of steps to run trainer.')
 tf.flags.DEFINE_integer('batch_size', 32, 'Minibatch size')
-tf.flags.DEFINE_integer('latent_dim', 3, 'Number of latent dimensions')
+tf.flags.DEFINE_integer('latent_dim', 2, 'Number of latent dimensions')
 tf.flags.DEFINE_integer('test_image_number', 5, 'Number of test images to recover during training')
 tf.flags.DEFINE_string('logdir', './logs', 'Logs folder')
 tf.flags.DEFINE_string('data_path', './Data/Images', 'Logs folder')
@@ -18,9 +18,8 @@ tf.flags.DEFINE_bool('plot_latent', True, 'Plot latent space')
 tf.flags.DEFINE_bool('shuffle', True, 'Plot latent space')
 
 FLAGS = tf.flags.FLAGS
-
 # Prepare output directories
-model_description = get_model_description(FLAGS.flag_values_dict())
+model_description = get_model_description(FLAGS)
 results_folder = create_results_folder(os.path.join('Results', model_description))
 model_folder = os.path.join('Models', model_description)
 delete_old_logs(FLAGS.logdir)
@@ -34,17 +33,16 @@ input_batch = iterator.get_next()
 vae = VAE(input_batch, FLAGS.latent_dim, FLAGS.learning_rate, )
 
 init_vars = [tf.local_variables_initializer(), tf.global_variables_initializer()]
-gpu_options = tf.GPUOptions(allow_growth=True)
-
 
 # Training loop
 with tf.Session() as sess:
     writer = tf.summary.FileWriter('./logs', sess.graph)
 
     sess.run(init_vars)
+    merged_summary_op = tf.summary.merge_all()
 
     for epoch in range(FLAGS.epochs):
-        print('Actual epochs is: {}'.format(epoch), end='', flush= True)
+        print('Actual epochs is: {}'.format(epoch), end='', flush=True)
         sess.run(iterator.initializer)
         flag = True
         ts = time()
@@ -53,19 +51,11 @@ with tf.Session() as sess:
 
                 sess.run(vae.optimize)
 
-                # Save model
-                if not epoch % 10 and epoch > 0:
-                    if os.path.exists(model_folder):
-                        delete_old_logs(model_folder)
-                    inputs, outputs = vae.get_inputs_outputs()
-                    tf.saved_model.simple_save(
-                        sess, model_folder, inputs, outputs
-                    )
-
-                if flag:
+                if flag and not epoch % 2:
                     flag = False
                     # Get input and recover output images comparison
-                    target, output_ = sess.run([input_batch, vae.decode])
+                    summ, target, output_ = sess.run([merged_summary_op, input_batch, vae.decode])
+                    writer.add_summary(summ, epoch)
                     f, axarr = plt.subplots(FLAGS.test_image_number, 2)
                     for j in range(FLAGS.test_image_number):
                         for pos, im in enumerate([target, output_]):
@@ -77,6 +67,15 @@ with tf.Session() as sess:
 
             except tf.errors.OutOfRangeError:
                 print('\t Epoch time: {}'.format(time() - ts))
+                # Save model
+                if not epoch % 10 and epoch > 0:
+                    print('Saving model...')
+                    if os.path.exists(model_folder):
+                        delete_old_logs(model_folder)
+                    inputs, outputs = vae.get_inputs_outputs()
+                    tf.saved_model.simple_save(
+                        sess, model_folder, inputs, outputs
+                    )
                 break
 
 

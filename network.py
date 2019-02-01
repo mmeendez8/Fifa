@@ -29,7 +29,6 @@ class VAE:
         self.optimize
 
 
-
     @define_scope
     def encode(self):
         activation = tf.nn.relu
@@ -38,6 +37,7 @@ class VAE:
         with tf.variable_scope('Encoder'):
             x = tf.layers.conv2d(x, filters=64, kernel_size=4, strides=2, padding='same', activation=activation)
             x = tf.layers.conv2d(x, filters=64, kernel_size=4, strides=2, padding='same', activation=activation)
+            x = tf.layers.conv2d(x, filters=64, kernel_size=4, strides=1, padding='same', activation=activation)
             x = tf.layers.conv2d(x, filters=64, kernel_size=4, strides=1, padding='same', activation=activation)
             x = tf.layers.flatten(x)
 
@@ -60,7 +60,8 @@ class VAE:
             recovered_size = int(np.sqrt(self.inputs_decoder/3))
 
             x = tf.reshape(x, [-1, recovered_size, recovered_size, 3])
-
+            x = tf.layers.conv2d_transpose(x, filters=64, kernel_size=4, strides=1, padding='same',
+                                           activation=activation)
             x = tf.layers.conv2d_transpose(x, filters=64, kernel_size=4, strides=1, padding='same',
                                            activation=activation)
             x = tf.layers.conv2d_transpose(x, filters=64, kernel_size=4, strides=1, padding='same',
@@ -90,7 +91,7 @@ class VAE:
                 latent_loss = 0.5 * tf.reduce_sum(tf.square(self.mean_) + tf.square(self.std_dev) - tf.log(tf.square(self.std_dev)) - 1, 1)
 
                 loss = tf.reduce_mean(img_loss + latent_loss)
-                # tf.summary.scalar('batch_loss', loss)
+                tf.summary.scalar('batch_loss', loss)
 
             optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(loss)
         return optimizer
