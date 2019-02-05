@@ -16,8 +16,7 @@ tf.flags.DEFINE_integer('epochs_to_plot', 2, 'Number of epochs before saving tes
 tf.flags.DEFINE_integer('save_after_n', 20, 'Number of epochs before saving network')
 tf.flags.DEFINE_string('logdir', './logs', 'Logs folder')
 tf.flags.DEFINE_string('data_path', './Data/Images', 'Logs folder')
-tf.flags.DEFINE_bool('plot_latent', True, 'Plot latent space')
-tf.flags.DEFINE_bool('shuffle', True, 'Plot latent space')
+tf.flags.DEFINE_bool('shuffle', True, 'Shuffle dataset for training')
 FLAGS = tf.flags.FLAGS
 
 
