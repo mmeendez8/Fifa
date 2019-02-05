@@ -39,30 +39,3 @@ def load_and_process_data(filenames, batch_size, shuffle=True):
         dataset = dataset.prefetch(2)
 
     return dataset
-
-#
-# base_dir = 'Data/Images'
-# dataset, n_batches = load_and_process_data(base_dir=base_dir, batch_size=5, shuffle=False)
-#
-#
-# iterator = dataset.make_initializable_iterator()
-# input_batch = iterator.get_next()
-#
-#
-#
-# init_vars = [tf.local_variables_initializer(), tf.global_variables_initializer()]
-#
-#
-#
-# with tf.Session() as sess:
-#     sess.run([init_vars, iterator.initializer]) # Initialize variables and the iterator
-#
-#     while 1:    # Iterate until we get out of range error!
-#         try:
-#             batch = sess.run(input_batch)
-#             print(batch.shape)  # Get batch dimensions
-#             plt.imshow(batch[0,...])
-#             plt.show()
-#         except tf.errors.OutOfRangeError:  # This exception is triggered when all batches are iterated
-#             print('All batches have been iterated!')
-#             break

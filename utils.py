@@ -1,5 +1,6 @@
 import os
 import shutil
+import numpy as np
 
 
 def create_results_folder(results_folder='Results'):
@@ -8,11 +9,13 @@ def create_results_folder(results_folder='Results'):
             os.makedirs(os.path.join(results_folder, folder))
     return results_folder
 
+
 def create_folder(folder):
     if os.path.exists(folder):
         delete_old_logs(folder)
         os.makedirs(folder)
     return folder
+
 
 def get_model_description(flags):
     description = ''
@@ -30,6 +33,17 @@ def delete_old_logs(logdir):
     except:
         return
 
+
 def get_files(base_dir):
     files = [os.path.join(base_dir, file) for file in os.listdir(base_dir)]
     return files
+
+
+def get_interp(v1, v2, n):
+    ''' Sample points for interpolation of vectors'''
+    if not v1.shape == v2.shape:
+        raise Exception('Different vector size')
+
+    return np.array([np.linspace(v1[i], v2[i], n+2) for i in range(v1.shape[0])]).T
+
+

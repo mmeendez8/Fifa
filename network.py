@@ -97,15 +97,4 @@ class VAE:
             optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(loss)
         return optimizer
 
-    def get_inputs_outputs(self):
-        # Saving
-        inputs = {
-            'input_tensor': self.data,
-        }
-        outputs = {
-            'latent': self.__getattribute__('_cache_encode')[0],
-            'prediction': self.__getattribute__('_cache_decode'),
-        }
-        return inputs, outputs
-
 
