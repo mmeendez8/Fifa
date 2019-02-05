@@ -1,13 +1,4 @@
 import tensorflow as tf
-import os
-import matplotlib.pyplot as plt
-
-
-
-def get_files(base_dir):
-    files = [os.path.join(base_dir, file) for file in os.listdir(base_dir)]
-    return files
-
 
 
 def remove_noise(image):
@@ -19,18 +10,16 @@ def remove_noise(image):
 
 
 def parse_function(filename):
-
     image_string = tf.read_file(filename)
     image = tf.image.decode_png(image_string, channels=4)
     image = remove_noise(image)
-    # image = tf.image.rgb_to_grayscale(image[:,:,:3])
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
     image.set_shape([48, 48, 3])
 
     return image
 
 
-def load_and_process_data(base_dir, batch_size, shuffle=True):
+def load_and_process_data(filenames, batch_size, shuffle=True):
     '''
     Reveices a list of filenames and returns preprocessed images as a tensorflow dataset
     :param filenames: list of file paths
@@ -39,22 +28,17 @@ def load_and_process_data(base_dir, batch_size, shuffle=True):
     :return:
     '''
     with tf.device('/cpu:0'):
-        with tf.name_scope('DataPipe'):
-            filenames = get_files(base_dir)
-            dataset = tf.data.Dataset.from_tensor_slices(filenames)
-            dataset = dataset.map(parse_function, num_parallel_calls=4)
 
-            if shuffle:
-                dataset = dataset.shuffle((len(filenames)//4)+1) # Number of imgs to keep in a buffer to randomly sample
+        dataset = tf.data.Dataset.from_tensor_slices(filenames)
+        dataset = dataset.map(parse_function, num_parallel_calls=4)
 
-            dataset = dataset.batch(batch_size)
-            dataset = dataset.prefetch(2)
-            n_batches = len(filenames) // batch_size
+        if shuffle:
+            dataset = dataset.shuffle(5000) # Number of imgs to keep in a buffer to randomly sample
 
-            if len(filenames) % batch_size != 0:
-                n_batches += 1
+        dataset = dataset.batch(batch_size)
+        dataset = dataset.prefetch(2)
 
-    return dataset, n_batches
+    return dataset
 
 #
 # base_dir = 'Data/Images'

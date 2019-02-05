@@ -8,6 +8,11 @@ def create_results_folder(results_folder='Results'):
             os.makedirs(os.path.join(results_folder, folder))
     return results_folder
 
+def create_folder(folder):
+    if os.path.exists(folder):
+        delete_old_logs(folder)
+        os.makedirs(folder)
+    return folder
 
 def get_model_description(flags):
     description = ''
@@ -21,8 +26,10 @@ def get_model_description(flags):
 
 def delete_old_logs(logdir):
     try:
-        if not len(os.listdir(logdir)) == 0:
-            shutil.rmtree(logdir)
+        shutil.rmtree(logdir)
     except:
         return
 
+def get_files(base_dir):
+    files = [os.path.join(base_dir, file) for file in os.listdir(base_dir)]
+    return files

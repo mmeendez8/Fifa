@@ -48,6 +48,7 @@ class VAE:
             # Reparametrization trick
             epsilon = tf.random_normal(tf.stack([tf.shape(x)[0], self.latent_dim]), name='epsilon')
             self.z = self.mean_ + tf.multiply(epsilon, self.std_dev)
+            latent = tf.identity(self.z, name='latent_output')
 
             return self.z, self.mean_, self.std_dev
 
