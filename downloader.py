@@ -4,7 +4,7 @@ import os
 from queue import Queue
 from time import time
 from threading import Thread
-
+import sys
 
 class DownloadWorker(Thread):
     def __init__(self, queue):
@@ -26,15 +26,29 @@ class DownloadWorker(Thread):
             self.queue.task_done()
 
 
-def main():
+def main(args):
 
     print('=====================================================================================================')
     print('                                   DOWNLOAD STARTED                                                  ')
     print('=====================================================================================================')
     ts = time()
 
-    # Prepare output folder
     base_folder = 'Data/Images/'
+    threads = 10
+
+    if len(args) > 2:
+        raise Exception('Error. Please insert only destination folder and number of threads')
+
+    for arg in args:
+        if arg.isdigit():
+            threads = arg
+        elif isinstance(arg, str):
+            base_folder = arg
+        else:
+            raise Exception('Error command argument not valid. Insert only destination folder and number of threads')
+
+    print('Destination folder: {}'.format(base_folder))
+    # Prepare output folder
     if not os.path.exists(base_folder):
         os.makedirs(base_folder)
 
@@ -44,8 +58,9 @@ def main():
     # Read data
     data = pd.read_csv('Data/data.csv').Photo
 
-    # Create 8 worker threads
-    for x in range(20):
+    # Create  worker threads
+    print('Creating {} threads'.format(threads))
+    for x in range(threads):
         worker = DownloadWorker(queue)
 
         # Setting daemon to True will let the main thread exit even though the workers are blocking
@@ -64,4 +79,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
