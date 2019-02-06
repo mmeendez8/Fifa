@@ -2,7 +2,7 @@
 
 This repository contains an implementation of a Variational Autoencoder 
 for creating fake FIFA football players. See in depth tutorial on Medium post
- titled [Generating fake FIFA football players with Variational Autoencoders and Tensorflow]().
+ titled [Generating fake FIFA football players with Variational Autoencoders and Tensorflow](https://towardsdatascience.com/generating-fake-fifa-19-football-players-with-variational-autoencoders-and-tensorflow-aff6c10016ae).
 
 
 ## File list
