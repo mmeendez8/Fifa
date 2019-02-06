@@ -74,24 +74,24 @@ $ python eval.py --latent_dim=15 --max_epoch=980
 
 Compare original images with the reconstructed ones.
 ![train](Data/Examples/Epoch_998.png)
----
+
 
 When our model was trained with a  two dimensional latent space, we can get the following plot.
 ![latent_space](Data/Examples/grid.png)
----
+
 
 Compute the interpolation between two different players.
 
 ![mix](Data/Examples/sr_marcelo.png)
 ![mix2](Data/Examples/interp.png)
----
+
 
 Generate average players for each of the given countries.
 
 ![mix](Data/Examples/country_centroids.png)
 
 
----
+
 
 
 
